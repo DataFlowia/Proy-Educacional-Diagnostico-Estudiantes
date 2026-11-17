@@ -37,8 +37,9 @@ input.invalid{border-color:var(--error)}
 .anon input{width:18px;height:18px;accent-color:var(--accent)}
 .note{margin:0 0 18px;color:var(--muted);font-size:15px}
 #comentarios{margin-bottom:0}
-button{background:var(--accent);color:#04121c;border:0;border-radius:12px;padding:18px 30px;font:inherit;font-size:16px;cursor:pointer}
+button{background:var(--accent);color:#04121c;border:0;border-radius:12px;padding:18px 30px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
 button:hover{filter:brightness(1.08)}
+button:disabled{opacity:.5;cursor:wait}
 button:focus-visible{outline:2px solid #fff;outline-offset:3px}
 #ok{display:none;margin-top:18px;padding:16px;border:1px solid var(--accent);border-radius:12px;background:#0b1a26}
 footer{margin-top:28px;color:var(--muted);font-size:14px;text-align:center}
@@ -76,7 +77,7 @@ footer a{color:var(--accent)}
   </section>
 
   <button type="submit" id="btnEnviar">Enviar diagnóstico</button>
-  <div id="ok" role="status">¡Gracias! Tu diagnóstico fue enviado correctamente.</div>
+  <div id="ok" role="status">¡Gracias! Tu diagnóstico fue recibido y guardado correctamente.</div>
   <div id="errEnvio" role="alert" style="display:none;margin-top:18px;padding:16px;border:1px solid var(--error);border-radius:12px;background:#260b0b;color:var(--error)">
     Hubo un problema al enviar tus respuestas. Revisa tu conexión e inténtalo nuevamente.
   </div>
@@ -88,6 +89,9 @@ footer a{color:var(--accent)}
 </main>
 
 <script>
+// >>> REEMPLAZA ESTE ENLACE CON LA URL DE TU APLICACIÓN WEB DE APPS SCRIPT <<<
+const SCRIPT_URL = "https://script.google.com/macros/s/TU_ID_AQUI/exec";
+
 // type: r = una opción, c = varias opciones, t = texto libre
 const SECCIONES = [
  {t:"A. Información general", q:[
@@ -121,9 +125,6 @@ const SECCIONES = [
   {n:21, p:"Imagina que tienes que realizar un proyecto para tu asignatura favorita. ¿Cómo utilizarías una IA para ayudarte, sin dejar que la IA haga todo el trabajo por ti?", k:"t"}]}
 ];
 
-// >>> REEMPLAZA ESTE ENLACE CON LA URL DE TU APLICACIÓN WEB DE APPS SCRIPT <<<
-const SCRIPT_URL = "https://script.google.com/macros/s/TU_ID_AQUI/exec";
-
 const cont = document.getElementById('preguntas');
 cont.innerHTML = SECCIONES.map(s => `
   <section class="card"><h2>${s.t}</h2>${s.q.map(q => {
@@ -145,6 +146,10 @@ const btnEnviar = document.getElementById('btnEnviar');
 const msgOk = document.getElementById('ok');
 const msgErr = document.getElementById('errEnvio');
 
+// Autorelleno opcional si compartes la URL con ?grupo=COLEGIO1
+const urlGrupo = new URLSearchParams(window.location.search).get('grupo');
+if (urlGrupo) codigo.value = urlGrupo;
+
 anonimo.addEventListener('change', () => {
   [nombre, correo].forEach(el => { if (anonimo.checked) el.value = ''; el.disabled = anonimo.checked; });
 });
@@ -157,6 +162,27 @@ function validarCodigo() {
 }
 codigo.addEventListener('input', () => { if (codigo.classList.contains('invalid')) validarCodigo(); });
 
+function jp(params) {
+  return new Promise((ok, fail) => {
+    const cb = "cb" + Math.random().toString(36).slice(2);
+    const s = document.createElement("script");
+    const fin = () => { clearTimeout(t); delete window[cb]; s.remove(); };
+    const t = setTimeout(() => { fin(); fail(new Error("tiempo agotado")); }, 25000);
+    window[cb] = o => { fin(); (o && o.ok) ? ok(o) : fail(new Error((o && o.error) || "error")); };
+    s.onerror = () => { fin(); fail(new Error("red")); };
+    s.src = SCRIPT_URL + "?" + new URLSearchParams({ ...params, callback: cb });
+    document.head.appendChild(s);
+  });
+}
+
+async function enviarFragmentos(datos) {
+  const s = encodeURIComponent(JSON.stringify(datos));
+  const N = 1000, n = Math.ceil(s.length / N);
+  for (let i = 0; i < n; i++) {
+    await jp({ id: datos.id, i: i, n: n, d: s.slice(i * N, (i + 1) * N) });
+  }
+}
+
 form.addEventListener('submit', async e => {
   e.preventDefault();
   if (!validarCodigo()) { codigo.focus(); return; }
@@ -167,6 +193,7 @@ form.addEventListener('submit', async e => {
   btnEnviar.textContent = 'Enviando...';
 
   const datos = {
+    id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())).slice(0, 8),
     anonimo: anonimo.checked,
     nombre: nombre.value.trim(),
     correo: correo.value.trim(),
@@ -184,22 +211,19 @@ form.addEventListener('submit', async e => {
   });
 
   try {
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(datos)
-    });
-
-    const json = await res.json();
-    if (json.status === 'ok') {
-      msgOk.style.display = 'block';
-      form.reset();
-      [nombre, correo].forEach(el => el.disabled = false);
-    } else {
-      throw new Error(json.message || 'Error en servidor');
+    if (SCRIPT_URL.includes("TU_ID_AQUI")) {
+      throw new Error("Falta configurar SCRIPT_URL con el enlace /exec de Apps Script");
     }
+    await enviarFragmentos(datos);
+    msgOk.style.display = 'block';
+    form.reset();
+    if (urlGrupo) codigo.value = urlGrupo;
+    [nombre, correo].forEach(el => el.disabled = false);
   } catch (error) {
     console.error('Error al enviar:', error);
+    msgErr.textContent = error.message.includes("SCRIPT_URL")
+      ? "Falta pegar la URL /exec de Apps Script en el código HTML."
+      : "Hubo un problema al enviar tus respuestas. Revisa tu conexión e inténtalo nuevamente.";
     msgErr.style.display = 'block';
   } finally {
     btnEnviar.disabled = false;
