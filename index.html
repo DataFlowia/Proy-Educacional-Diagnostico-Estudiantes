@@ -121,7 +121,7 @@ const SECCIONES = [
   {n:21, p:"Imagina que tienes que realizar un proyecto para tu asignatura favorita. ¿Cómo utilizarías una IA para ayudarte, sin dejar que la IA haga todo el trabajo por ti?", k:"t"}]}
 ];
 
-// >>> PEGA AQUÍ LA URL DE TU APLICACIÓN WEB DE APPS SCRIPT <<<
+// >>> REEMPLAZA ESTE ENLACE CON LA URL DE TU APLICACIÓN WEB DE APPS SCRIPT <<<
 const SCRIPT_URL = "https://script.google.com/macros/s/TU_ID_AQUI/exec";
 
 const cont = document.getElementById('preguntas');
@@ -184,7 +184,6 @@ form.addEventListener('submit', async e => {
   });
 
   try {
-    // Se envía como text/plain para evitar bloqueos CORS preflight en Google Apps Script
     const res = await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -206,89 +205,6 @@ form.addEventListener('submit', async e => {
     btnEnviar.disabled = false;
     btnEnviar.textContent = 'Enviar diagnóstico';
   }
-});
-</script>
-<script>
-// type: r = una opción, c = varias opciones, t = texto libre
-const SECCIONES = [
- {t:"A. Información general", q:[
-  {n:1, p:"Nivel", k:"r", o:["5°–6° Básico","7°–8° Básico","1°–2° Medio","3°–4° Medio"]},
-  {n:2, p:"¿Con qué frecuencia utilizas dispositivos digitales para estudiar?", k:"r", o:["Nunca","Rara vez","Algunas veces","Frecuentemente","Todos o casi todos los días"]}]},
- {t:"B. Competencias tecnológicas", q:[
-  {n:3, p:"¿Qué dispositivos utilizas?", k:"c", o:["Computador","Tablet","Teléfono","Chromebook","Otro"]},
-  {n:4, p:"¿Qué tan cómodo/a te sientes aprendiendo una nueva aplicación?", k:"r", o:["1 — Nada cómodo/a","2 — Poco","3 — Regular","4 — Cómodo/a","5 — Muy cómodo/a"]},
-  {n:5, p:"¿Qué actividades realizas con tecnología?", k:"c", o:["Buscar información","Hacer trabajos","Crear presentaciones","Editar imágenes","Editar videos","Programar","Jugar","Comunicarse","Crear contenido","Otra"]}]},
- {t:"C. Conocimiento de IA", q:[
-  {n:6, p:"¿Has utilizado alguna herramienta de Inteligencia Artificial?", k:"r", o:["Nunca","Una vez","Algunas veces","Muchas veces","La utilizo frecuentemente"]},
-  {n:7, p:"¿Cuál conoces?", k:"c", o:["ChatGPT","Gemini","Copilot","Claude","Generadores de imágenes","Generadores de video","Otra","Ninguna"]},
-  {n:8, p:"¿Qué crees que es la Inteligencia Artificial?", k:"t"},
-  {n:9, p:"¿Crees que una IA siempre dice la verdad?", k:"r", o:["Sí","No","No estoy seguro/a"]},
-  {n:10, p:"Si una IA te entrega una respuesta que parece correcta, ¿qué harías?", k:"r", o:["La copiaría","La leería","Buscaría confirmar la información","Compararía diferentes fuentes","Intentaría descubrir si contiene errores o información inventada"]}]},
- {t:"D. Uso académico", q:[
-  {n:11, p:"¿Has utilizado IA para hacer tareas?", k:"r", o:["Nunca","Una vez","Algunas veces","Frecuentemente"]},
-  {n:12, p:"¿Para qué la has utilizado?", k:"c", o:["Buscar ideas","Entender una materia","Resumir","Traducir","Escribir","Crear imágenes","Crear presentaciones","Resolver problemas","Programar","Otra"]},
-  {n:13, p:"¿Crees que está bien copiar directamente una respuesta de IA y entregarla como propia?", k:"r", o:["Sí","No","Depende de la situación","No estoy seguro/a"]},
-  {n:14, p:"¿Crees que deberías informar a tu profesor cuando utilizas IA para realizar un trabajo?", k:"r", o:["Sí","No","Depende del trabajo","No estoy seguro/a"]}]},
- {t:"E. Pensamiento crítico", q:[
-  {n:15, p:"Una IA genera una noticia sorprendente. ¿Qué haces?", k:"r", o:["La comparto","La creo porque la IA lo dijo","Pregunto a la IA si es verdadera","Busco la noticia en otras fuentes","Compruebo fuentes confiables antes de utilizarla"]},
-  {n:16, p:"¿Puede una IA equivocarse?", k:"r", o:["Sí","No","No estoy seguro/a"]},
-  {n:17, p:"¿Puede una IA tener sesgos?", k:"r", o:["Sí","No","No sé qué significa sesgo"]}]},
- {t:"F. Creatividad", q:[
-  {n:18, p:"¿Qué te gustaría crear utilizando IA?", k:"c", o:["Historias","Imágenes","Videos","Música","Presentaciones","Juegos","Aplicaciones","Robots","Proyectos científicos","Otra cosa"]}]},
- {t:"G. Actitud", q:[
-  {n:19, p:"¿Cómo te sientes frente a la IA?", k:"r", o:["Me preocupa","Me da lo mismo","Me interesa","Me entusiasma","Quiero aprender más"]},
-  {n:20, p:"¿Qué te gustaría aprender sobre IA?", k:"t"}]},
- {t:"21. Pregunta clave para estudiantes", q:[
-  {n:21, p:"Imagina que tienes que realizar un proyecto para tu asignatura favorita. ¿Cómo utilizarías una IA para ayudarte, sin dejar que la IA haga todo el trabajo por ti?", k:"t"}]}
-];
-
-const cont = document.getElementById('preguntas');
-cont.innerHTML = SECCIONES.map(s => `
-  <section class="card"><h2>${s.t}</h2>${s.q.map(q => {
-    const num = s.t.startsWith("21.") ? "" : q.n + ". ";
-    let campo;
-    if (q.k === "t") campo = `<textarea name="p${q.n}" aria-label="Pregunta ${q.n}"></textarea>`;
-    else campo = `<div class="opts">${q.o.map(o =>
-      `<label class="opt"><input type="${q.k==='r'?'radio':'checkbox'}" name="p${q.n}" value="${o}"> ${o}</label>`).join('')}</div>`;
-    return `<div class="q"><p>${num}${q.p}</p>${campo}</div>`;
-  }).join('')}</section>`).join('');
-
-const form = document.getElementById('diag');
-const anonimo = document.getElementById('anonimo');
-const nombre = document.getElementById('nombre');
-const correo = document.getElementById('correo');
-const codigo = document.getElementById('codigo');
-const codigoError = document.getElementById('codigoError');
-
-anonimo.addEventListener('change', () => {
-  [nombre, correo].forEach(el => { if (anonimo.checked) el.value = ''; el.disabled = anonimo.checked; });
-});
-
-function validarCodigo() {
-  const ok = codigo.value.trim().length > 0;
-  codigo.classList.toggle('invalid', !ok);
-  codigoError.classList.toggle('show', !ok);
-  return ok;
-}
-codigo.addEventListener('input', () => { if (codigo.classList.contains('invalid')) validarCodigo(); });
-
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  if (!validarCodigo()) { codigo.focus(); return; }
-
-  const datos = { anonimo: anonimo.checked, nombre: nombre.value.trim(), correo: correo.value.trim(),
-                  codigo: codigo.value.trim(), comentarios: document.getElementById('comentarios').value.trim(), respuestas: {} };
-  SECCIONES.flatMap(s => s.q).forEach(q => {
-    if (q.k === 't') datos.respuestas[q.n] = form.elements['p' + q.n].value.trim();
-    else {
-      const sel = [...form.querySelectorAll(`[name="p${q.n}"]:checked`)].map(i => i.value);
-      datos.respuestas[q.n] = q.k === 'r' ? (sel[0] || "") : sel;
-    }
-  });
-
-  // >>> Aquí conecta tu lógica actual de envío (fetch, Google Sheets, etc.) usando "datos".
-  console.log(datos);
-  document.getElementById('ok').style.display = 'block';
 });
 </script>
 </body>
